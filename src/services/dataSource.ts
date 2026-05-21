@@ -1,4 +1,4 @@
-import type * as duckdb from "@duckdb/duckdb-wasm";
+import * as duckdb from "@duckdb/duckdb-wasm";
 import {
   closeDuckDB,
   initializeDuckDB,
@@ -28,6 +28,11 @@ export interface ParquetDataSourceResult {
   columns: string[];
 }
 
+export interface ParquetSchemaColumn {
+  name: string;
+  type: string;
+}
+
 export async function fetchParquetSource(url: string): Promise<Uint8Array> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -45,6 +50,31 @@ export async function registerParquetSource(
   await db.registerFileBuffer(fileName, parquetBytes);
 }
 
+export async function registerParquetUrl(
+  db: duckdb.AsyncDuckDB,
+  fileName: string,
+  url: string,
+): Promise<void> {
+  await db.registerFileURL(fileName, url, duckdb.DuckDBDataProtocol.HTTP, true);
+}
+
+export async function queryParquetSchema(
+  conn: duckdb.AsyncDuckDBConnection,
+  fileName: string,
+): Promise<ParquetSchemaColumn[]> {
+  const sql = `DESCRIBE SELECT * FROM read_parquet('${escapeSqlString(fileName)}')`;
+  const queryResult = await conn.query(sql);
+  const rows = queryResult.toArray() as Array<{
+    column_name: unknown;
+    column_type: unknown;
+  }>;
+
+  return rows.map((row) => ({
+    name: String(row.column_name),
+    type: String(row.column_type),
+  }));
+}
+
 export async function queryParquetSource(
   conn: duckdb.AsyncDuckDBConnection,
   fileName: string,
@@ -52,6 +82,34 @@ export async function queryParquetSource(
 ): Promise<ParquetDataSourceResult> {
   const sql = buildDefaultParquetQuery(fileName, limit);
   return queryRows(conn, sql);
+}
+
+export async function loadRemoteParquetDataSource({
+  url,
+  fileName = "source.parquet",
+  limit,
+  query,
+}: ParquetDataSourceRequest): Promise<
+  ParquetDataSourceResult & { schema: ParquetSchemaColumn[] }
+> {
+  const duckdbConnection = await initializeDuckDB();
+
+  try {
+    await registerParquetUrl(duckdbConnection.db, fileName, url);
+    const schema = await queryParquetSchema(duckdbConnection.conn, fileName);
+    const sql = query?.(fileName) ?? buildDefaultParquetQuery(fileName, limit);
+    const result = await queryRows(duckdbConnection.conn, sql);
+    return {
+      ...result,
+      columns:
+        result.columns.length > 0
+          ? result.columns
+          : schema.map((column) => column.name),
+      schema,
+    };
+  } finally {
+    await closeDuckDB(duckdbConnection);
+  }
 }
 
 export async function loadParquetDataSource({

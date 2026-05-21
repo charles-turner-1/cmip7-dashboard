@@ -10,6 +10,17 @@ vi.mock("vue-chartjs", () => ({
   },
 }));
 
+vi.mock("@/services/dataSource", () => ({
+  loadRemoteParquetDataSource: vi.fn().mockResolvedValue({
+    columns: ["year", "Model_A"],
+    rows: [{ year: 2027, Model_A: 1.55 }],
+    schema: [
+      { name: "year", type: "BIGINT" },
+      { name: "Model_A", type: "DOUBLE" },
+    ],
+  }),
+}));
+
 describe("DashboardHome", () => {
   it("renders the dashboard home page", () => {
     const wrapper = mount(DashboardHome);

@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fetchParquetSource,
+  loadRemoteParquetDataSource,
   loadParquetDataSource,
+  queryParquetSchema,
   queryParquetSource,
+  registerParquetUrl,
   registerParquetSource,
 } from "../dataSource";
 import { closeDuckDB, initializeDuckDB } from "../duckdbClient";
@@ -53,6 +56,44 @@ describe("dataSource", () => {
     await registerParquetSource(db as never, "source.parquet", bytes);
 
     expect(db.registerFileBuffer).toHaveBeenCalledWith("source.parquet", bytes);
+  });
+
+  it("registers remote parquet URLs with DuckDB HTTP direct I/O", async () => {
+    const db = { registerFileURL: vi.fn() };
+
+    await registerParquetUrl(
+      db as never,
+      "source.parquet",
+      "https://example.test/source.parquet",
+    );
+
+    expect(db.registerFileURL).toHaveBeenCalledWith(
+      "source.parquet",
+      "https://example.test/source.parquet",
+      expect.any(Number),
+      true,
+    );
+  });
+
+  it("queries parquet schema through DuckDB describe", async () => {
+    const conn = {
+      query: vi.fn().mockResolvedValue({
+        toArray: () => [
+          { column_name: "year", column_type: "BIGINT" },
+          { column_name: "tas", column_type: "DOUBLE" },
+        ],
+      }),
+    };
+
+    const result = await queryParquetSchema(conn as never, "source.parquet");
+
+    expect(conn.query).toHaveBeenCalledWith(
+      "DESCRIBE SELECT * FROM read_parquet('source.parquet')",
+    );
+    expect(result).toEqual([
+      { name: "year", type: "BIGINT" },
+      { name: "tas", type: "DOUBLE" },
+    ]);
   });
 
   it("queries a registered parquet source and normalizes vector values", async () => {
@@ -115,5 +156,51 @@ describe("dataSource", () => {
     );
     expect(closeDuckDB).toHaveBeenCalledWith({ db, conn });
     expect(result.rows).toEqual([{ experiment: "historical" }]);
+  });
+
+  it("loads remote parquet schema and rows without fetching the whole file first", async () => {
+    const db = { registerFileURL: vi.fn() };
+    const conn = {
+      query: vi
+        .fn()
+        .mockResolvedValueOnce({
+          toArray: () => [{ column_name: "tas", column_type: "DOUBLE" }],
+        })
+        .mockResolvedValueOnce({
+          toArray: () => [{ tas: 1.25 }],
+        }),
+    };
+
+    vi.mocked(initializeDuckDB).mockResolvedValue({
+      db,
+      conn,
+    } as never);
+
+    const result = await loadRemoteParquetDataSource({
+      url: "https://example.test/source.parquet",
+      fileName: "cmip7.parquet",
+      limit: 1,
+    });
+
+    expect(db.registerFileURL).toHaveBeenCalledWith(
+      "cmip7.parquet",
+      "https://example.test/source.parquet",
+      expect.any(Number),
+      true,
+    );
+    expect(conn.query).toHaveBeenNthCalledWith(
+      1,
+      "DESCRIBE SELECT * FROM read_parquet('cmip7.parquet')",
+    );
+    expect(conn.query).toHaveBeenNthCalledWith(
+      2,
+      "SELECT * FROM read_parquet('cmip7.parquet') LIMIT 1",
+    );
+    expect(closeDuckDB).toHaveBeenCalledWith({ db, conn });
+    expect(result).toEqual({
+      columns: ["tas"],
+      rows: [{ tas: 1.25 }],
+      schema: [{ name: "tas", type: "DOUBLE" }],
+    });
   });
 });
