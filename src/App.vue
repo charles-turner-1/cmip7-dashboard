@@ -1,0 +1,37 @@
+<script setup lang="ts">
+import AppHeader from "./components/AppHeader.vue";
+import { isNavigating } from "./router";
+</script>
+
+<template>
+  <div class="min-h-screen bg-slate-50 text-slate-950">
+    <Transition name="fade">
+      <div
+        v-if="isNavigating"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm"
+      >
+        <div class="flex items-center gap-4 rounded-lg bg-white p-6 shadow-2xl">
+          <div
+            class="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-b-teal-600"
+          ></div>
+          <span class="text-lg font-medium text-slate-800">Loading...</span>
+        </div>
+      </div>
+    </Transition>
+
+    <AppHeader />
+    <RouterView />
+  </div>
+</template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
