@@ -43,6 +43,7 @@
       v-else
       v-model:value="openPanels"
       multiple
+      class="payu-accordion"
       data-test="payu-accordion"
     >
       <AccordionPanel
@@ -140,7 +141,7 @@ function formatValue(value: unknown): string {
 <style scoped>
 @media (prefers-color-scheme: dark) {
   /* Override PrimeVue Aura CSS variables for the accordion in dark mode */
-  :deep([data-test="payu-accordion"]) {
+  :deep(.payu-accordion) {
     --p-accordion-panel-border-color: #374151;
     --p-accordion-header-background: #1f2937;
     --p-accordion-header-hover-background: #374151;
