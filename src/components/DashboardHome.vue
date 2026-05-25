@@ -50,6 +50,12 @@
 
     <DummyClimatePlot />
 
+    <PayuExperimentAccordion
+      :experiments="payuExperiments"
+      :loading="payuLoading"
+      :error="payuError"
+    />
+
     <section
       class="mx-auto mb-12 max-w-2xl space-y-3 rounded-2xl border border-gray-200 bg-white p-5 text-sm leading-relaxed text-gray-600 shadow-sm"
     >
@@ -81,11 +87,30 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from "vue";
 import DummyClimatePlot from "./DummyClimatePlot.vue";
+import PayuExperimentAccordion from "./PayuExperimentAccordion.vue";
+import { loadPayuExperiments } from "@/services/payuExperiments";
+import type { PayuExperiment } from "@/services/payuExperiments";
 
 const statusCards = [
   { label: "App", value: "Vue 3 + Vite" },
   { label: "Metrics", value: "TCRE-ready" },
   { label: "Charts", value: "Chart.js-ready" },
 ];
+
+const payuExperiments = ref<PayuExperiment[]>([]);
+const payuLoading = ref(true);
+const payuError = ref<string | null>(null);
+
+onMounted(async () => {
+  try {
+    payuExperiments.value = await loadPayuExperiments();
+  } catch (err) {
+    payuError.value =
+      err instanceof Error ? err.message : "Failed to load experiments.";
+  } finally {
+    payuLoading.value = false;
+  }
+});
 </script>
