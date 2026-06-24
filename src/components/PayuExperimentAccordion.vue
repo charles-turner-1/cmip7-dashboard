@@ -63,6 +63,11 @@
               {{ experiment.modelCurrentTime }}
             </span>
             <span
+              class="shrink-0 rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+            >
+              {{ experiment.yearsRun }} yrs
+            </span>
+            <span
               class="shrink-0 rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300"
             >
               {{ experiment.serviceUnitsDisplay }} SU
