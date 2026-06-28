@@ -10,14 +10,16 @@ export interface Cmip7ParquetSource {
 }
 
 export function getCmip7ParquetSource(): Cmip7ParquetSource {
+  const config = useRuntimeConfig();
   const source =
-    import.meta.env.VITE_CMIP7_PARQUET_SOURCE ?? DEFAULT_CMIP7_PARQUET_SOURCE;
+    (config.public.cmip7ParquetSource as string) ||
+    DEFAULT_CMIP7_PARQUET_SOURCE;
 
   return {
     source,
     url: resolveAcaciaUrl(source),
     fileName:
-      import.meta.env.VITE_CMIP7_PARQUET_FILE_NAME ??
+      (config.public.cmip7ParquetFileName as string) ||
       DEFAULT_CMIP7_PARQUET_FILE_NAME,
   };
 }

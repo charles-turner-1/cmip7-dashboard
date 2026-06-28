@@ -21,6 +21,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
+    env:
+      NITRO_PRESET: github_pages
+      NUXT_APP_BASE_URL: /cmip7-dashboard/
+      NUXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NUXT_PUBLIC_POSTHOG_KEY }}
+      NUXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NUXT_PUBLIC_POSTHOG_HOST }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "23"
+          node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
@@ -58,14 +64,8 @@ jobs:
           done
           echo "version=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Build
-        run: NODE_ENV=production npm run build
-        env:
-          APP_VERSION: ${{ steps.version.outputs.version }}
-          # PostHog is not configured for this app yet. Uncomment when the
-          # repository secrets have been added.
-          # VITE_PUBLIC_POSTHOG_KEY: ${{ secrets.VITE_PUBLIC_POSTHOG_KEY }}
-          # VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
+      - name: Generate static site
+        run: NODE_ENV=production npm run generate
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -73,7 +73,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./dist"
+          path: "./.output/public"
 
       - name: Deploy to GitHub Pages
         id: deployment

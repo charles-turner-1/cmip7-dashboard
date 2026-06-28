@@ -1,3 +1,35 @@
+<script setup lang="ts">
+import { loadPayuExperiments } from "~/services/payuExperiments";
+import type { PayuExperiment } from "~/services/payuExperiments";
+
+useSeoMeta({
+  title: "CMIP7 Dashboard",
+  description:
+    "A lightweight interface for tracking CMIP7 climate model outputs and derived metrics.",
+});
+
+const statusCards = [
+  { label: "App", value: "Nuxt 4 + nuxt-ui" },
+  { label: "Metrics", value: "TCRE-ready" },
+  { label: "Charts", value: "Chart.js-ready" },
+];
+
+const payuExperiments = ref<PayuExperiment[]>([]);
+const payuLoading = ref(true);
+const payuError = ref<string | null>(null);
+
+onMounted(async () => {
+  try {
+    payuExperiments.value = await loadPayuExperiments();
+  } catch (err) {
+    payuError.value =
+      err instanceof Error ? err.message : "Failed to load experiments.";
+  } finally {
+    payuLoading.value = false;
+  }
+});
+</script>
+
 <template>
   <main class="container mx-auto px-6 pt-6">
     <section
@@ -32,7 +64,12 @@
         class="text-sm leading-relaxed text-gray-500 sm:text-base dark:text-gray-400"
       >
         A lightweight interface for tracking climate model outputs and derived
-        metrics as runs progress.
+        metrics as runs progress. Read the latest
+        <NuxtLink
+          to="/blog"
+          class="font-medium text-blue-700 hover:underline dark:text-blue-400"
+          >CMIP7 updates</NuxtLink
+        >.
       </p>
     </section>
 
@@ -56,7 +93,16 @@
       </div>
     </section>
 
-    <DummyClimatePlot />
+    <ClientOnly>
+      <DummyClimatePlot />
+      <template #fallback>
+        <section
+          class="mx-auto mb-12 flex min-h-72 max-w-2xl items-center justify-center rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-400 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500"
+        >
+          Loading plot…
+        </section>
+      </template>
+    </ClientOnly>
 
     <PayuExperimentAccordion
       :experiments="payuExperiments"
@@ -73,10 +119,15 @@
         About
       </h2>
       <p>
-        This scaffold will become a browser-based view over CMIP7 model runs and
-        derived indicators such as TCRE. For now it keeps the app shell,
-        routing, telemetry, test setup, and data-visualisation dependencies in
-        place.
+        This dashboard is a browser-based view over CMIP7 model runs and derived
+        indicators such as TCRE. Scientists can publish CMIP7 updates by adding
+        a markdown file under <code>content/blog/</code> — it appears on the
+        <NuxtLink
+          to="/blog"
+          class="font-medium text-blue-700 hover:underline dark:text-blue-400"
+          >blog</NuxtLink
+        >
+        automatically.
       </p>
       <div
         class="flex flex-wrap items-center gap-3 border-t border-gray-200 pt-3 dark:border-gray-700"
@@ -99,32 +150,3 @@
     </section>
   </main>
 </template>
-
-<script setup lang="ts">
-import { onMounted, ref } from "vue";
-import DummyClimatePlot from "./DummyClimatePlot.vue";
-import PayuExperimentAccordion from "./PayuExperimentAccordion.vue";
-import { loadPayuExperiments } from "@/services/payuExperiments";
-import type { PayuExperiment } from "@/services/payuExperiments";
-
-const statusCards = [
-  { label: "App", value: "Vue 3 + Vite" },
-  { label: "Metrics", value: "TCRE-ready" },
-  { label: "Charts", value: "Chart.js-ready" },
-];
-
-const payuExperiments = ref<PayuExperiment[]>([]);
-const payuLoading = ref(true);
-const payuError = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    payuExperiments.value = await loadPayuExperiments();
-  } catch (err) {
-    payuError.value =
-      err instanceof Error ? err.message : "Failed to load experiments.";
-  } finally {
-    payuLoading.value = false;
-  }
-});
-</script>

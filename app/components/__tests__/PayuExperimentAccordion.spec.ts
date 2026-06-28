@@ -1,37 +1,8 @@
-import { mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+// @vitest-environment nuxt
+import { describe, expect, it } from "vitest";
+import { mountSuspended } from "@nuxt/test-utils/runtime";
 import PayuExperimentAccordion from "../PayuExperimentAccordion.vue";
-import type { PayuExperiment } from "@/services/payuExperiments";
-
-// Stub PrimeVue accordion components so tests run without a full PrimeVue
-// plugin installation, mirroring how DummyClimatePlot stubs vue-chartjs.
-vi.mock("primevue/accordion", () => ({
-  default: {
-    name: "Accordion",
-    props: ["value", "multiple"],
-    emits: ["update:value"],
-    template: '<div data-test="accordion-root"><slot /></div>',
-  },
-}));
-vi.mock("primevue/accordionpanel", () => ({
-  default: {
-    name: "AccordionPanel",
-    props: ["value"],
-    template: '<div data-test="accordion-item"><slot /></div>',
-  },
-}));
-vi.mock("primevue/accordionheader", () => ({
-  default: {
-    name: "AccordionHeader",
-    template: '<button data-test="accordion-trigger"><slot /></button>',
-  },
-}));
-vi.mock("primevue/accordioncontent", () => ({
-  default: {
-    name: "AccordionContent",
-    template: '<div data-test="accordion-content"><slot /></div>',
-  },
-}));
+import type { PayuExperiment } from "~/services/payuExperiments";
 
 const MOCK_EXPERIMENTS: PayuExperiment[] = [
   {
@@ -65,18 +36,18 @@ const MOCK_EXPERIMENTS: PayuExperiment[] = [
 ];
 
 describe("PayuExperimentAccordion", () => {
-  it("renders accordion items for each experiment", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("renders an accordion trigger for each experiment", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: { experiments: MOCK_EXPERIMENTS },
     });
 
-    expect(wrapper.findAll('[data-test="accordion-item"]')).toHaveLength(2);
+    expect(wrapper.findAll('[data-test="accordion-trigger"]')).toHaveLength(2);
     expect(wrapper.text()).toContain("Ndep2-PI-CNP-concentrations");
     expect(wrapper.text()).toContain("piControl-spun-up");
   });
 
-  it("shows the model current time and service units in the summary", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("shows the model current time and service units in the summary", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: { experiments: [MOCK_EXPERIMENTS[0]!] },
     });
 
@@ -84,8 +55,8 @@ describe("PayuExperimentAccordion", () => {
     expect(wrapper.text()).toContain("1 SU");
   });
 
-  it("renders all detail fields in the expanded panel", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("renders all detail fields in the panel", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: { experiments: [MOCK_EXPERIMENTS[0]!] },
     });
 
@@ -95,8 +66,8 @@ describe("PayuExperimentAccordion", () => {
     expect(content.text()).toContain("experiment service units used");
   });
 
-  it("shows the loading state while data is being fetched", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("shows the loading state while data is being fetched", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: { experiments: [], loading: true },
     });
 
@@ -104,8 +75,8 @@ describe("PayuExperimentAccordion", () => {
     expect(wrapper.find('[data-test="payu-accordion"]').exists()).toBe(false);
   });
 
-  it("shows the error state when an error is provided", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("shows the error state when an error is provided", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: {
         experiments: [],
         error: "Network request failed",
@@ -118,8 +89,8 @@ describe("PayuExperimentAccordion", () => {
     expect(wrapper.find('[data-test="payu-accordion"]').exists()).toBe(false);
   });
 
-  it("shows the empty state when there are no experiments", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("shows the empty state when there are no experiments", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: { experiments: [] },
     });
 
@@ -129,8 +100,8 @@ describe("PayuExperimentAccordion", () => {
     );
   });
 
-  it("accepts a custom empty message", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("accepts a custom empty message", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: { experiments: [], emptyMessage: "No runs yet." },
     });
 
@@ -139,12 +110,12 @@ describe("PayuExperimentAccordion", () => {
     );
   });
 
-  it("starts with no open panels", () => {
-    const wrapper = mount(PayuExperimentAccordion, {
+  it("starts with no open panels", async () => {
+    const wrapper = await mountSuspended(PayuExperimentAccordion, {
       props: { experiments: MOCK_EXPERIMENTS },
     });
 
-    const vm = wrapper.vm as { openPanels: string[] };
+    const vm = wrapper.vm as unknown as { openPanels: string[] };
     expect(vm.openPanels).toEqual([]);
   });
 });

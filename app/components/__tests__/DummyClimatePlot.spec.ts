@@ -1,6 +1,7 @@
-import { mount } from "@vue/test-utils";
+// @vitest-environment nuxt
 import { describe, expect, it, vi } from "vitest";
-import DummyClimatePlot from "../DummyClimatePlot.vue";
+import { mountSuspended } from "@nuxt/test-utils/runtime";
+import DummyClimatePlot from "../DummyClimatePlot.client.vue";
 
 vi.mock("vue-chartjs", () => ({
   Line: {
@@ -10,7 +11,7 @@ vi.mock("vue-chartjs", () => ({
   },
 }));
 
-vi.mock("@/services/dataSource", () => ({
+vi.mock("~/services/dataSource", () => ({
   loadRemoteParquetDataSource: vi.fn().mockResolvedValue({
     columns: ["year", "Model_A", "Model_B"],
     rows: [
@@ -27,7 +28,7 @@ vi.mock("@/services/dataSource", () => ({
 
 describe("DummyClimatePlot", () => {
   it("renders the parquet-backed plot shell", async () => {
-    const wrapper = mount(DummyClimatePlot);
+    const wrapper = await mountSuspended(DummyClimatePlot);
 
     expect(wrapper.text()).toContain("CMIP7 readiness signal");
     expect(wrapper.find('[data-test="line-chart"]').exists()).toBe(true);
