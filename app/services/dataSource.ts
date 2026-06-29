@@ -6,13 +6,7 @@ import {
 } from "./duckdbClient";
 
 export type DataSourceValue =
-  | string
-  | number
-  | boolean
-  | bigint
-  | Date
-  | null
-  | DataSourceValue[];
+  string | number | boolean | bigint | Date | null | DataSourceValue[];
 
 export type DataSourceRow = Record<string, DataSourceValue>;
 
