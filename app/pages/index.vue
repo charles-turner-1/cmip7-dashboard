@@ -102,11 +102,13 @@ onMounted(async () => {
       />
     </div>
 
-    <PayuExperimentAccordion
-      :experiments="payuExperiments"
-      :loading="payuLoading"
-      :error="payuError"
-    />
+    <div class="mb-12">
+      <PayuExperimentAccordion
+        :experiments="payuExperiments"
+        :loading="payuLoading"
+        :error="payuError"
+      />
+    </div>
 
     <ClientOnly>
       <DummyClimatePlot />
