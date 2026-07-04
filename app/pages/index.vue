@@ -55,7 +55,9 @@ onMounted(async () => {
 
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar title="Experiments" />
+      <!-- Desktop shows the sidebar itself, so the navbar only exists on
+           mobile to host the sidebar (detail picker) toggle. -->
+      <UDashboardNavbar class="lg:hidden" />
     </template>
 
     <template #body>
