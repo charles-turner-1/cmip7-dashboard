@@ -2,11 +2,13 @@
 import { computed } from "vue";
 import { useGlossary } from "~/composables/useGlossary";
 
-// Inline jargon/acronym term (issue #12). Two accessible levels of detail:
-//   1. hover / focus / tap → a UTooltip with the quick expansion;
-//   2. click / tap / keyboard → a UPopover card with the full explanation,
-//      further reading, and a link into the glossary.
-// It lives in components/content/ so it is also usable inside markdown via MDC
+// Inline jargon/acronym term (issue #12). A single hover popover (reka's
+// HoverCard under the hood) surfaces the definition on hover *and* keyboard
+// focus, and its panel is itself hoverable so the further-reading and glossary
+// links stay clickable. The trigger is visibly highlighted so it's obvious the
+// term is explained. On touch, tapping focuses the trigger and opens the card.
+//
+// Lives in components/content/ so it also works inside markdown via MDC
 // (`:jargon[DECK]{term="DECK"}`). Unknown terms degrade to plain text, so a
 // typo'd `term` never breaks the surrounding page.
 const props = defineProps<{
@@ -17,10 +19,13 @@ const props = defineProps<{
 const { getTerm } = useGlossary();
 const entry = computed(() => getTerm(props.term));
 
-// Quick tooltip text: the acronym expansion if there is one, else the one-liner.
-const tooltipText = computed(
-  () => entry.value?.expansion ?? entry.value?.short ?? "",
-);
+// Screen-reader label: term, its expansion, and the one-line gloss.
+const ariaLabel = computed(() => {
+  const e = entry.value;
+  if (!e) return "";
+  const head = e.expansion ? `${e.term}, ${e.expansion}` : e.term;
+  return `${head}. ${e.short} Definition available.`;
+});
 </script>
 
 <template>
@@ -29,20 +34,26 @@ const tooltipText = computed(
     ><slot>{{ term }}</slot></span
   >
 
-  <UPopover v-else :data-test="'jargon-popover'">
-    <UTooltip :text="tooltipText">
-      <button
-        type="button"
-        data-test="jargon"
-        :data-term="entry.slug"
-        class="cursor-help border-b border-dotted border-current font-medium text-primary underline-offset-2"
-        :aria-label="`${entry.term}${
-          entry.expansion ? ` (${entry.expansion})` : ''
-        }: ${entry.short} Activate for the full definition.`"
-      >
-        <slot>{{ entry.term }}</slot>
-      </button>
-    </UTooltip>
+  <UPopover
+    v-else
+    mode="hover"
+    :open-delay="120"
+    :close-delay="120"
+    :data-test="'jargon-popover'"
+  >
+    <button
+      type="button"
+      data-test="jargon"
+      :data-term="entry.slug"
+      :aria-label="ariaLabel"
+      class="jargon cursor-help rounded-[0.25rem] bg-primary/10 px-1 font-medium text-primary underline decoration-primary/40 decoration-dotted underline-offset-[3px] transition-colors hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+    >
+      <slot>{{ entry.term }}</slot
+      ><UIcon
+        name="i-lucide-info"
+        class="ml-0.5 inline-block size-3 translate-y-[1px] opacity-60"
+      />
+    </button>
 
     <template #content>
       <div class="max-w-xs space-y-2 p-4">

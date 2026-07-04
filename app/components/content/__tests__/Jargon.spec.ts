@@ -26,13 +26,9 @@ vi.mock("~/composables/useGlossary", () => ({
   }),
 }));
 
-// Render the tooltip/popover slots inline so their bindings are assertable
-// without depending on reka-ui's teleport + floating-ui behaviour in happy-dom.
+// Render the popover slots inline so their bindings are assertable without
+// depending on reka-ui's teleport + floating-ui behaviour in happy-dom.
 const stubs = {
-  UTooltip: {
-    props: ["text"],
-    template: `<span :data-tooltip="text"><slot /></span>`,
-  },
   UPopover: { template: `<span><slot /><slot name="content" /></span>` },
 };
 
@@ -46,12 +42,9 @@ describe("Jargon", () => {
 
     const trigger = wrapper.find('[data-test="jargon"]');
     expect(trigger.exists()).toBe(true);
-    expect(trigger.text()).toBe("DECK");
+    expect(trigger.text()).toContain("DECK");
     expect(trigger.attributes("data-term")).toBe("deck");
-    // The acronym expansion is in the tooltip and echoed in the aria-label.
-    expect(wrapper.find("[data-tooltip]").attributes("data-tooltip")).toContain(
-      "Diagnosis, Evaluation",
-    );
+    // The acronym expansion is echoed in the aria-label for screen readers.
     expect(trigger.attributes("aria-label")).toContain("Diagnosis, Evaluation");
   });
 
